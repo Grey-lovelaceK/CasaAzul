@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Sistema Escolar</title>
+    <link rel="icon" href="../assets/images/favicon.png" type="image/x-icon" />
+    <link rel="stylesheet" href="../assets/css/pages/dashboard.css" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/components/sidebar.css" />
+  </head>
+  <body>
+    <div id="sidebar-container"></div>
+
+    <main id="main-content">
+      <div class="page-header">
+        <h1>Dashboard Principal</h1>
+        <p>Resumen general del sistema escolar</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="material-icons-outlined icon">school</span>
+          <h3>Estudiantes</h3>
+          <div class="number">1,234</div>
+        </div>
+
+        <div class="stat-card">
+          <span class="material-icons-outlined icon">person</span>
+          <h3>Profesores</h3>
+          <div class="number">87</div>
+        </div>
+
+        <div class="stat-card">
+          <span class="material-icons-outlined icon">book</span>
+          <h3>Cursos Activos</h3>
+          <div class="number">45</div>
+        </div>
+
+        <div class="stat-card">
+          <span class="material-icons-outlined icon">trending_up</span>
+          <h3>Asistencia</h3>
+          <div class="number">94%</div>
+        </div>
+      </div>
+
+      <div class="content-section">
+        <h2>
+          <span class="material-icons-outlined">flash_on</span>
+          Acciones Rápidas
+        </h2>
+        <div class="quick-actions">
+          <button class="action-btn">
+            <span class="material-icons-outlined">person_add</span>
+            Nuevo Estudiante
+          </button>
+          <button class="action-btn">
+            <span class="material-icons-outlined">group_add</span>
+            Nuevo Profesor
+          </button>
+          <button class="action-btn">
+            <span class="material-icons-outlined">add_circle</span>
+            Nuevo Curso
+          </button>
+          <button class="action-btn">
+            <span class="material-icons-outlined">grade</span>
+            Ver Calificaciones
+          </button>
+        </div>
+      </div>
+
+      <div class="content-section">
+        <h2>
+          <span class="material-icons-outlined">history</span>
+          Actividad Reciente
+        </h2>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-icon">
+              <span class="material-icons-outlined">person_add</span>
+            </div>
+            <div class="activity-details">
+              <h4>Nuevo estudiante registrado</h4>
+              <p>Juan Pérez fue agregado al sistema</p>
+            </div>
+            <span class="activity-time">Hace 5 min</span>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <span class="material-icons-outlined">grade</span>
+            </div>
+            <div class="activity-details">
+              <h4>Calificaciones actualizadas</h4>
+              <p>Curso de Matemáticas - 3° Año</p>
+            </div>
+            <span class="activity-time">Hace 15 min</span>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <span class="material-icons-outlined">event</span>
+            </div>
+            <div class="activity-details">
+              <h4>Nuevo horario publicado</h4>
+              <p>Horarios del semestre 2025-1</p>
+            </div>
+            <span class="activity-time">Hace 1 hora</span>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <span class="material-icons-outlined">assignment</span>
+            </div>
+            <div class="activity-details">
+              <h4>Reporte generado</h4>
+              <p>Informe mensual de asistencias</p>
+            </div>
+            <span class="activity-time">Hace 2 horas</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="../assets/js/pages/dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="../../assets/images/favicon.png"
+      type="image/x-icon"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <title>sidebar</title>
+  </head>
+  <body>
+    <aside class="vertical-sidebar">
+      <input
+        type="checkbox"
+        role="switch"
+        id="checkbox-input"
+        class="checkbox-input"
+        checked
+      />
+      <nav>
+        <header>
+          <div class="sidebar__toggle-container">
+            <label
+              tabindex="0"
+              for="checkbox-input"
+              id="label-for-checkbox-input"
+              class="nav__toggle"
+            >
+              <span class="material-icons-outlined menu-icon">menu</span>
+            </label>
+          </div>
+
+          <figure class="header-logo">
+            <img src="../../assets/images/logo.png" alt="Logo Escuela" />
+            <figcaption>
+              <p class="user-id">Escuela Técnica</p>
+              <p class="user-role">Administrador</p>
+            </figcaption>
+          </figure>
+        </header>
+
+        <section class="sidebar__wrapper">
+          <ul class="sidebar__list list--primary">
+            <li class="sidebar__item item--heading">
+              <h2 class="sidebar__item--heading">Principal</h2>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/dashboard.html"
+                data-tooltip="Dashboard"
+              >
+                <span class="material-icons-outlined icon">dashboard</span>
+                <span class="text">Dashboard</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/estudiantes/lista.html"
+                data-tooltip="Estudiantes"
+              >
+                <span class="material-icons-outlined icon">school</span>
+                <span class="text">Estudiantes</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/profesores/lista.html"
+                data-tooltip="Profesores"
+              >
+                <span class="material-icons-outlined icon">person</span>
+                <span class="text">Profesores</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/cursos/lista.html"
+                data-tooltip="Cursos"
+              >
+                <span class="material-icons-outlined icon">book</span>
+                <span class="text">Cursos</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/horarios/index.html"
+                data-tooltip="Horarios"
+              >
+                <span class="material-icons-outlined icon">calendar_today</span>
+                <span class="text">Horarios</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item item--heading">
+              <h2 class="sidebar__item--heading">Gestión</h2>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/calificaciones/index.html"
+                data-tooltip="Calificaciones"
+              >
+                <span class="material-icons-outlined icon">grade</span>
+                <span class="text">Calificaciones</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/reportes/index.html"
+                data-tooltip="Reportes"
+              >
+                <span class="material-icons-outlined icon">assessment</span>
+                <span class="text">Reportes</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item item--heading">
+              <h2 class="sidebar__item--heading">Sistema</h2>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/perfil/index.html"
+                data-tooltip="Perfil"
+              >
+                <span class="material-icons-outlined icon">account_circle</span>
+                <span class="text">Perfil</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="pages/configuracion/index.html"
+                data-tooltip="Configuración"
+              >
+                <span class="material-icons-outlined icon">settings</span>
+                <span class="text">Configuración</span>
+              </a>
+            </li>
+
+            <li class="sidebar__item">
+              <a
+                class="sidebar__link"
+                href="login.html"
+                data-tooltip="Cerrar Sesión"
+              >
+                <span class="material-icons-outlined icon">logout</span>
+                <span class="text">Cerrar Sesión</span>
+              </a>
+            </li>
+          </ul>
+        </section>
+      </nav>
+    </aside>
+  </body>
+</html>
