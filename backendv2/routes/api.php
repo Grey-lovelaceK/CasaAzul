@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\EstudianteController;
 use App\Http\Controllers\Api\V1\ProfesorController;
 use App\Http\Controllers\Api\V1\CursoController;
@@ -10,249 +12,150 @@ use App\Http\Controllers\Api\V1\MatriculaController;
 use App\Http\Controllers\Api\V1\NotasController;
 use App\Http\Controllers\Api\V1\AsistenciaController;
 use App\Http\Controllers\Api\V1\ReporteController;
-use App\Http\Controllers\Api\V1\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes - Sistema Académico Casa Azul
+| API Routes - Casa Azul Académico
 |--------------------------------------------------------------------------
-| Versión: 1.0
-| Prefix: /api/v1
-|
 */
 
-// Rutas públicas
+// Rutas públicas (sin autenticación)
 Route::prefix('v1')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
-    // ==================== AUTENTICACIÓN ====================
-    Route::prefix('auth')->group(function () {
-        Route::post('/login', [AuthController::class, 'login']);
-        Route::post('/refresh', [AuthController::class, 'refresh']);
+// Rutas protegidas (requieren autenticación JWT)
+Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
 
-        // Rutas protegidas de auth
-        Route::middleware(['jwt.auth'])->group(function () {
-            Route::post('/logout', [AuthController::class, 'logout']);
-            Route::get('/me', [AuthController::class, 'me']);
-            Route::put('/change-password', [AuthController::class, 'changePassword']);
-        });
+    // ===== AUTENTICACIÓN =====
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/refresh', [AuthController::class, 'refresh']);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    // ===== DASHBOARD =====
+    Route::get('/dashboard/admin', [DashboardController::class, 'admin']);
+    Route::get('/dashboard/profesor', [DashboardController::class, 'profesor']);
+    Route::get('/dashboard/estados/{tipo}', [DashboardController::class, 'estados']);
+    Route::get('/dashboard/roles', [DashboardController::class, 'roles']);
+    Route::get('/dashboard/periodos', [DashboardController::class, 'periodos']);
+
+    // ===== ESTUDIANTES =====
+    Route::prefix('estudiantes')->group(function () {
+        Route::get('/', [EstudianteController::class, 'index']);
+        Route::post('/', [EstudianteController::class, 'store']);
+        Route::get('/{id}', [EstudianteController::class, 'show']);
+        Route::put('/{id}', [EstudianteController::class, 'update']);
+        Route::delete('/{id}', [EstudianteController::class, 'destroy']);
+
+        // Información académica del estudiante
+        Route::get('/{id}/notas', [EstudianteController::class, 'notas']);
+        Route::get('/{id}/asistencias', [EstudianteController::class, 'asistencias']);
+        Route::get('/{id}/historial', [EstudianteController::class, 'historial']);
     });
 
-    // ==================== RUTAS PROTEGIDAS ====================
-    Route::middleware(['jwt.auth'])->group(function () {
+    // ===== PROFESORES =====
+    Route::prefix('profesores')->group(function () {
+        Route::get('/', [ProfesorController::class, 'index']);
+        Route::post('/', [ProfesorController::class, 'store']);
+        Route::get('/{id}', [ProfesorController::class, 'show']);
+        Route::put('/{id}', [ProfesorController::class, 'update']);
+        Route::delete('/{id}', [ProfesorController::class, 'destroy']);
+        Route::get('/{id}/asignaturas', [ProfesorController::class, 'asignaturas']);
+    });
 
-        // ==================== DASHBOARD ====================
-        Route::prefix('dashboard')->group(function () {
-            Route::get('/admin', [DashboardController::class, 'admin'])
-                ->middleware('permission:reportes.index');
-            Route::get('/profesor', [DashboardController::class, 'profesor'])
-                ->middleware('permission:asignaturas.index');
-            Route::get('/estudiante', [DashboardController::class, 'estudiante']);
-        });
+    // ===== CURSOS =====
+    Route::prefix('cursos')->group(function () {
+        Route::get('/', [CursoController::class, 'index']);
+        Route::post('/', [CursoController::class, 'store']);
+        Route::get('/{id}', [CursoController::class, 'show']);
+        Route::put('/{id}', [CursoController::class, 'update']);
+        Route::delete('/{id}', [CursoController::class, 'destroy']);
+    });
 
-        // ==================== ESTUDIANTES ====================
-        Route::prefix('estudiantes')->group(function () {
-            Route::get('/', [EstudianteController::class, 'index'])
-                ->middleware('permission:estudiantes.index');
-            Route::get('/{id}', [EstudianteController::class, 'show'])
-                ->middleware('permission:estudiantes.show');
-            Route::post('/', [EstudianteController::class, 'store'])
-                ->middleware('permission:estudiantes.create');
-            Route::put('/{id}', [EstudianteController::class, 'update'])
-                ->middleware('permission:estudiantes.update');
-            Route::delete('/{id}', [EstudianteController::class, 'destroy'])
-                ->middleware('permission:estudiantes.delete');
+    // ===== ASIGNATURAS =====
+    Route::prefix('asignaturas')->group(function () {
+        Route::get('/', [AsignaturaController::class, 'index']);
+        Route::post('/', [AsignaturaController::class, 'store']);
+        Route::get('/{id}', [AsignaturaController::class, 'show']);
+        Route::put('/{id}', [AsignaturaController::class, 'update']);
+        Route::delete('/{id}', [AsignaturaController::class, 'destroy']);
 
-            // Rutas adicionales
-            Route::get('/{id}/notas', [EstudianteController::class, 'notas'])
-                ->middleware('permission:notas.index');
-            Route::get('/{id}/asistencias', [EstudianteController::class, 'asistencias'])
-                ->middleware('permission:asistencias.index');
-            Route::get('/{id}/historial', [EstudianteController::class, 'historial'])
-                ->middleware('permission:estudiantes.show');
-        });
+        // Gestión de asignaturas
+        Route::post('/{id}/asignar-profesor', [AsignaturaController::class, 'asignarProfesor']);
+        Route::get('/{id}/estudiantes', [AsignaturaController::class, 'estudiantes']);
+    });
 
-        // ==================== PROFESORES ====================
-        Route::prefix('profesores')->group(function () {
-            Route::get('/', [ProfesorController::class, 'index'])
-                ->middleware('permission:profesores.index');
-            Route::get('/{id}', [ProfesorController::class, 'show'])
-                ->middleware('permission:profesores.show');
-            Route::post('/', [ProfesorController::class, 'store'])
-                ->middleware('permission:profesores.create');
-            Route::put('/{id}', [ProfesorController::class, 'update'])
-                ->middleware('permission:profesores.update');
-            Route::delete('/{id}', [ProfesorController::class, 'destroy'])
-                ->middleware('permission:profesores.delete');
+    // ===== MATRÍCULAS =====
+    Route::prefix('matriculas')->group(function () {
+        Route::get('/', [MatriculaController::class, 'index']);
+        Route::post('/', [MatriculaController::class, 'store']); // Matrícula individual
+        Route::put('/{id}', [MatriculaController::class, 'update']);
+        Route::delete('/{id}', [MatriculaController::class, 'destroy']);
 
-            // Rutas adicionales
-            Route::get('/{id}/asignaturas', [ProfesorController::class, 'asignaturas'])
-                ->middleware('permission:asignaturas.index');
-        });
+        // Matrícula masiva (método principal)
+        Route::post('/matricular-curso', [MatriculaController::class, 'matricularEnCurso']);
+        Route::post('/retirar-curso', [MatriculaController::class, 'retirarDeCurso']);
+        Route::get('/asignaturas-disponibles', [MatriculaController::class, 'asignaturasDisponibles']);
+    });
 
-        // ==================== CURSOS ====================
-        Route::prefix('cursos')->group(function () {
-            Route::get('/', [CursoController::class, 'index'])
-                ->middleware('permission:cursos.index');
-            Route::get('/{id}', [CursoController::class, 'show'])
-                ->middleware('permission:cursos.show');
-            Route::post('/', [CursoController::class, 'store'])
-                ->middleware('permission:cursos.create');
-            Route::put('/{id}', [CursoController::class, 'update'])
-                ->middleware('permission:cursos.update');
-            Route::delete('/{id}', [CursoController::class, 'destroy'])
-                ->middleware('permission:cursos.delete');
-        });
+    // ===== NOTAS =====
+    Route::prefix('notas')->group(function () {
+        Route::get('/', [NotasController::class, 'index']);
+        Route::post('/', [NotasController::class, 'store']);
+        Route::put('/{id}', [NotasController::class, 'update']);
+        Route::delete('/{id}', [NotasController::class, 'destroy']);
 
-        // ==================== ASIGNATURAS ====================
-        Route::prefix('asignaturas')->group(function () {
-            Route::get('/', [AsignaturaController::class, 'index'])
-                ->middleware('permission:asignaturas.index');
-            Route::get('/{id}', [AsignaturaController::class, 'show'])
-                ->middleware('permission:asignaturas.show');
-            Route::post('/', [AsignaturaController::class, 'store'])
-                ->middleware('permission:asignaturas.create');
-            Route::put('/{id}', [AsignaturaController::class, 'update'])
-                ->middleware('permission:asignaturas.update');
-            Route::delete('/{id}', [AsignaturaController::class, 'destroy'])
-                ->middleware('permission:asignaturas.delete');
+        // Consultas específicas
+        Route::get('/asignatura/{id}', [NotasController::class, 'porAsignatura']);
+        Route::get('/estudiante/{id}', [NotasController::class, 'notasEstudiante']);
+        Route::get('/estudiante/{idEstudiante}/asignatura/{idAsignatura}', [NotasController::class, 'notasEstudianteAsignatura']);
 
-            // Asignar profesor
-            Route::post('/{id}/profesor', [AsignaturaController::class, 'asignarProfesor'])
-                ->middleware('permission:asignaturas.update');
+        // Carga masiva
+        Route::post('/cargar-masivo', [NotasController::class, 'cargarMasivo']);
+    });
 
-            // Estudiantes inscritos
-            Route::get('/{id}/estudiantes', [AsignaturaController::class, 'estudiantes'])
-                ->middleware('permission:asignaturas.show');
-        });
+    // ===== ASISTENCIA =====
+    Route::prefix('asistencias')->group(function () {
+        Route::get('/', [AsistenciaController::class, 'index']);
+        Route::post('/', [AsistenciaController::class, 'store']);
+        Route::put('/{id}', [AsistenciaController::class, 'update']);
 
-        // ==================== MATRÍCULAS ====================
-        Route::prefix('matriculas')->group(function () {
-            Route::get('/', [MatriculaController::class, 'index'])
-                ->middleware('permission:matriculas.index');
+        // Toma de asistencia
+        Route::post('/tomar-masivo', [AsistenciaController::class, 'tomarMasivo']);
+        Route::get('/asignatura/{id}', [AsistenciaController::class, 'porAsignatura']);
+        Route::get('/asignatura/{id}/lista-estudiantes', [AsistenciaController::class, 'listaEstudiantes']);
+        Route::delete('/eliminar-fecha', [AsistenciaController::class, 'eliminarPorFecha']);
+        Route::get('/asignatura/{id}/estadisticas', [AsistenciaController::class, 'estadisticas']);
+    });
 
-            // Matricular en curso completo (principal)
-            Route::post('/matricular-curso', [MatriculaController::class, 'matricularEnCurso'])
-                ->middleware('permission:matriculas.create');
+    // ===== REPORTES =====
+    Route::prefix('reportes')->group(function () {
+        Route::get('/general', [ReporteController::class, 'general']);
+        Route::get('/academico', [ReporteController::class, 'academico']);
 
-            // Matricular en asignatura específica (casos especiales)
-            Route::post('/', [MatriculaController::class, 'store'])
-                ->middleware('permission:matriculas.create');
+        // Reportes de notas
+        Route::get('/notas', [ReporteController::class, 'notas']);
+        Route::get('/notas/asignatura/{id}', [ReporteController::class, 'notasPorAsignatura']);
+        Route::get('/notas/estudiante/{id}', [ReporteController::class, 'notasPorEstudiante']);
 
-            Route::put('/{id}', [MatriculaController::class, 'update'])
-                ->middleware('permission:matriculas.update');
-            Route::delete('/{id}', [MatriculaController::class, 'destroy'])
-                ->middleware('permission:matriculas.delete');
+        // Reportes de asistencia
+        Route::get('/asistencia', [ReporteController::class, 'asistencia']);
+        Route::get('/asistencia/asignatura/{id}', [ReporteController::class, 'asistenciaPorAsignatura']);
+        Route::get('/asistencia/estudiante/{id}', [ReporteController::class, 'asistenciaPorEstudiante']);
 
-            // Retirar de curso completo
-            Route::post('/retirar-curso', [MatriculaController::class, 'retirarDeCurso'])
-                ->middleware('permission:matriculas.delete');
-
-            // Ver asignaturas disponibles
-            Route::get('/asignaturas-disponibles', [MatriculaController::class, 'asignaturasDisponibles'])
-                ->middleware('permission:matriculas.index');
-        });
-
-        // ==================== NOTAS ====================
-        Route::prefix('notas')->group(function () {
-            // Listar notas (profesor/admin)
-            Route::get('/', [NotasController::class, 'index'])
-                ->middleware('permission:notas.index');
-
-            // Ver mis notas (estudiante)
-            Route::get('/mis-notas', [NotasController::class, 'misNotas']);
-
-            // CRUD de notas
-            Route::post('/', [NotasController::class, 'store'])
-                ->middleware('permission:notas.create');
-            Route::put('/{id}', [NotasController::class, 'update'])
-                ->middleware('permission:notas.update');
-            Route::delete('/{id}', [NotasController::class, 'destroy'])
-                ->middleware('permission:notas.delete');
-
-            // Notas por asignatura
-            Route::get('/asignatura/{id}', [NotasController::class, 'porAsignatura'])
-                ->middleware('permission:notas.index');
-
-            // Cargar notas masivas
-            Route::post('/cargar-masivo', [NotasController::class, 'cargarMasivo'])
-                ->middleware('permission:notas.create');
-        });
-
-        // ==================== ASISTENCIAS ====================
-        Route::prefix('asistencias')->group(function () {
-            // Listar asistencias (profesor/admin)
-            Route::get('/', [AsistenciaController::class, 'index'])
-                ->middleware('permission:asistencias.index');
-
-            // Tomar asistencia individual
-            Route::post('/', [AsistenciaController::class, 'store'])
-                ->middleware('permission:asistencias.create');
-
-            // Actualizar asistencia
-            Route::put('/{id}', [AsistenciaController::class, 'update'])
-                ->middleware('permission:asistencias.update');
-
-            // Tomar asistencia masiva
-            Route::post('/tomar-masivo', [AsistenciaController::class, 'tomarMasivo'])
-                ->middleware('permission:asistencias.create');
-
-            // Lista de estudiantes para tomar asistencia
-            Route::get('/lista-estudiantes/{id}', [AsistenciaController::class, 'listaEstudiantes'])
-                ->middleware('permission:asistencias.create');
-
-            // Asistencia por asignatura
-            Route::get('/asignatura/{id}', [AsistenciaController::class, 'porAsignatura'])
-                ->middleware('permission:asistencias.index');
-
-            // Estadísticas de asistencia
-            Route::get('/estadisticas/{id}', [AsistenciaController::class, 'estadisticas'])
-                ->middleware('permission:asistencias.index');
-
-            // Eliminar asistencia por fecha (para re-tomar)
-            Route::delete('/eliminar-fecha', [AsistenciaController::class, 'eliminarPorFecha'])
-                ->middleware('permission:asistencias.update');
-        });
-
-        // ==================== REPORTES ====================
-        Route::prefix('reportes')->middleware('permission:reportes.index')->group(function () {
-            // Reporte general
-            Route::get('/general', [ReporteController::class, 'general']);
-
-            // Reporte de notas
-            Route::get('/notas', [ReporteController::class, 'notas'])
-                ->middleware('permission:reportes.notas');
-            Route::get('/notas/asignatura/{id}', [ReporteController::class, 'notasPorAsignatura']);
-            Route::get('/notas/estudiante/{id}', [ReporteController::class, 'notasPorEstudiante']);
-
-            // Reporte de asistencia
-            Route::get('/asistencia', [ReporteController::class, 'asistencia'])
-                ->middleware('permission:reportes.asistencia');
-            Route::get('/asistencia/asignatura/{id}', [ReporteController::class, 'asistenciaPorAsignatura']);
-            Route::get('/asistencia/estudiante/{id}', [ReporteController::class, 'asistenciaPorEstudiante']);
-
-            // Reporte académico completo
-            Route::get('/academico', [ReporteController::class, 'academico'])
-                ->middleware('permission:reportes.academico');
-
-            // Export PDF/Excel
-            Route::get('/export/notas', [ReporteController::class, 'exportNotas']);
-            Route::get('/export/asistencia', [ReporteController::class, 'exportAsistencia']);
-        });
-
-        // ==================== ESTADOS Y CATÁLOGOS ====================
-        Route::prefix('catalogos')->group(function () {
-            Route::get('/estados/{tipo}', [DashboardController::class, 'estados']);
-            Route::get('/roles', [DashboardController::class, 'roles']);
-            Route::get('/periodos', [DashboardController::class, 'periodos']);
-        });
+        // Exportaciones (pendientes de implementar en frontend)
+        Route::post('/exportar/notas', [ReporteController::class, 'exportNotas']);
+        Route::post('/exportar/asistencia', [ReporteController::class, 'exportAsistencia']);
     });
 });
 
-// Ruta de health check
-Route::get('/health', function () {
+// Ruta de prueba
+Route::get('/test', function () {
     return response()->json([
-        'status' => 'OK',
-        'timestamp' => now(),
-        'service' => 'Casa Azul API'
+        'success' => true,
+        'message' => 'API Casa Azul Académico funcionando correctamente',
+        'version' => '1.0.0',
+        'timestamp' => now()->toDateTimeString()
     ]);
 });
