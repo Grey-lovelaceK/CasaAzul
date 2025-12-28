@@ -8,14 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckPermission
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @param  string  $permission
-     * @return mixed
-     */
     public function handle(Request $request, Closure $next, $permission)
     {
         $user = Auth::user();
@@ -27,7 +19,6 @@ class CheckPermission
             ], 401);
         }
 
-        // Verificar si el usuario tiene el permiso
         if (!$this->hasPermission($user, $permission)) {
             return response()->json([
                 'success' => false,
@@ -39,16 +30,8 @@ class CheckPermission
         return $next($request);
     }
 
-    /**
-     * Verificar si el usuario tiene el permiso
-     * 
-     * @param $user
-     * @param string $permission
-     * @return bool
-     */
     private function hasPermission($user, $permission)
     {
-        // Verificar si el rol del usuario tiene el permiso
         return $user->rol->permisos()->where('slug', $permission)->exists();
     }
 }
