@@ -96,17 +96,18 @@ class ProfesorController extends Controller
 
         DB::beginTransaction();
         try {
-            $profesor = Profesor::create($request->only([
-                'rut',
-                'nombres',
-                'apellido_paterno',
-                'apellido_materno',
-                'email',
-                'telefono',
-                'especialidad',
-                'id_estado',
-                'fecha_contratacion'
-            ]));
+            // Crear profesor
+            $profesor = Profesor::create([
+                'rut' => $request->rut,
+                'nombres' => $request->nombres,
+                'apellido_paterno' => $request->apellido_paterno,
+                'apellido_materno' => $request->apellido_materno,
+                'email' => $request->email,
+                'telefono' => $request->telefono,
+                'especialidad' => $request->especialidad,
+                'id_estado' => $request->id_estado ?? 4, // Estado Activo por defecto
+                'fecha_contratacion' => $request->fecha_contratacion,
+            ]);
 
             // Crear usuario si se solicita
             if ($request->crear_usuario) {
@@ -115,7 +116,7 @@ class ProfesorController extends Controller
                     'email' => $profesor->email,
                     'password' => Hash::make($request->password),
                     'id_rol' => 2, // Profesor
-                    'id_profesor' => $profesor->id_profesor,
+                    'id_profesor' => $profesor->id_profesor, // ← ESTO FALTABA
                     'activo' => true,
                 ]);
             }
@@ -125,7 +126,7 @@ class ProfesorController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Profesor creado exitosamente',
-                'data' => $profesor
+                'data' => $profesor->load('usuario') // Cargar relación con usuario
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
