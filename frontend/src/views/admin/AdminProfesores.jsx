@@ -1,23 +1,74 @@
 // frontend/src/views/admin/AdminProfesores.jsx
-// Esta vista es similar a AdminEstudiantes pero para profesores
 
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Edit, FileUp, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { dashboardApi, profesoresApi } from "../../api";
 import { Button } from "../../components/common/Button";
 import { Card } from "../../components/common/Card";
+import { ImportarExcel } from "../../components/common/ImportarExcel";
 import { Input } from "../../components/common/Input";
 import { Modal } from "../../components/common/Modal";
 import { Table } from "../../components/common/Table";
 import { ESTADO_COLORS } from "../../utils/constants";
 import { formatRut } from "../../utils/formatters";
 
+// Campos para importación Excel
+const CAMPOS_IMPORTACION = [
+  {
+    nombre: "rut",
+    label: "RUT",
+    requerido: true,
+    tipo: "rut",
+    ejemplo: "12.345.678-9",
+  },
+  {
+    nombre: "nombres",
+    label: "Nombres",
+    requerido: true,
+    ejemplo: "María Elena",
+  },
+  {
+    nombre: "apellido_paterno",
+    label: "Apellido Paterno",
+    requerido: true,
+    ejemplo: "González",
+  },
+  {
+    nombre: "apellido_materno",
+    label: "Apellido Materno",
+    requerido: true,
+    ejemplo: "Pérez",
+  },
+  {
+    nombre: "email",
+    label: "Email",
+    requerido: true,
+    tipo: "email",
+    ejemplo: "maria@colegio.cl",
+  },
+  {
+    nombre: "telefono",
+    label: "Teléfono",
+    requerido: false,
+    ejemplo: "+56912345678",
+  },
+  {
+    nombre: "especialidad",
+    label: "Especialidad",
+    requerido: false,
+    ejemplo: "Matemáticas",
+  },
+];
+
 export const AdminProfesores = () => {
   const [profesores, setProfesores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showAsignaturasModal, setShowAsignaturasModal] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [profesorSeleccionado, setProfesorSeleccionado] = useState(null);
   const [search, setSearch] = useState("");
   const [estados, setEstados] = useState([]);
 
@@ -62,6 +113,44 @@ export const AdminProfesores = () => {
     }
   };
 
+  // Importar profesores desde Excel
+  const handleImport = async (datos) => {
+    try {
+      let creados = 0;
+      let errores = 0;
+
+      for (const profesor of datos) {
+        try {
+          const response = await profesoresApi.create({
+            ...profesor,
+            id_estado:
+              estados.find((e) => e.nombre === "Activo")?.id_estado || 4,
+          });
+          if (response.success) {
+            creados++;
+          } else {
+            errores++;
+          }
+        } catch {
+          errores++;
+        }
+      }
+
+      loadProfesores();
+
+      return {
+        success: true,
+        message: `Importación completada`,
+        detalles: { creados, errores },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || "Error al importar profesores",
+      };
+    }
+  };
+
   const columns = [
     {
       header: "RUT",
@@ -72,19 +161,26 @@ export const AdminProfesores = () => {
     {
       header: "Nombre",
       render: (row) => (
-        <span className="font-medium">
-          {row.nombres} {row.apellido_paterno}
-        </span>
+        <div>
+          <span className="font-medium text-gray-800">
+            {row.nombres} {row.apellido_paterno} {row.apellido_materno}
+          </span>
+          <p className="text-sm text-gray-500">{row.email}</p>
+        </div>
       ),
-    },
-    {
-      header: "Email",
-      accessor: "email",
     },
     {
       header: "Especialidad",
       render: (row) => (
         <span className="text-gray-600">{row.especialidad || "-"}</span>
+      ),
+    },
+    {
+      header: "Asignaturas",
+      render: (row) => (
+        <span className="text-blue-600 font-medium">
+          {row.asignaturas_count || 0}
+        </span>
       ),
     },
     {
@@ -103,19 +199,31 @@ export const AdminProfesores = () => {
       header: "Acciones",
       cellClassName: "text-right",
       render: (row) => (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-1">
+          <button
+            onClick={() => {
+              setProfesorSeleccionado(row);
+              setShowAsignaturasModal(true);
+            }}
+            className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+            title="Ver asignaturas"
+          >
+            <BookOpen className="w-4 h-4" />
+          </button>
           <button
             onClick={() => {
               setEditando(row);
               setShowModal(true);
             }}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+            title="Editar"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleDelete(row.id_profesor)}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+            title="Eliminar"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -126,35 +234,50 @@ export const AdminProfesores = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Profesores</h1>
-          <p className="text-gray-600 mt-1">Gestión de profesores</p>
+          <p className="text-gray-600 mt-1">
+            {profesores.length} profesores registrados
+          </p>
         </div>
-        <Button
-          icon={Plus}
-          onClick={() => {
-            setEditando(null);
-            setShowModal(true);
-          }}
-        >
-          Nuevo Profesor
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            icon={FileUp}
+            onClick={() => setShowImportModal(true)}
+          >
+            Importar Excel
+          </Button>
+          <Button
+            icon={Plus}
+            onClick={() => {
+              setEditando(null);
+              setShowModal(true);
+            }}
+          >
+            Nuevo Profesor
+          </Button>
+        </div>
       </div>
 
+      {/* Búsqueda */}
       <Card>
         <Input
           icon={Search}
-          placeholder="Buscar profesor..."
+          placeholder="Buscar por nombre, RUT, email o especialidad..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </Card>
 
+      {/* Tabla */}
       <Card>
         <Table columns={columns} data={profesores} loading={loading} />
       </Card>
 
+      {/* Modal Crear/Editar */}
       {showModal && (
         <ProfesorModal
           profesor={editando}
@@ -166,6 +289,39 @@ export const AdminProfesores = () => {
           onSave={() => {
             loadProfesores();
             setShowModal(false);
+            setEditando(null);
+          }}
+        />
+      )}
+
+      {/* Modal Importar */}
+      <ImportarExcel
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImport}
+        campos={CAMPOS_IMPORTACION}
+        titulo="Importar Profesores desde Excel"
+        nombreArchivo="plantilla_profesores"
+        plantillaData={[
+          {
+            RUT: "12.345.678-9",
+            Nombres: "María Elena",
+            "Apellido Paterno": "González",
+            "Apellido Materno": "Pérez",
+            Email: "maria@colegio.cl",
+            Teléfono: "+56912345678",
+            Especialidad: "Matemáticas",
+          },
+        ]}
+      />
+
+      {/* Modal Ver Asignaturas */}
+      {showAsignaturasModal && profesorSeleccionado && (
+        <AsignaturasProfesorModal
+          profesor={profesorSeleccionado}
+          onClose={() => {
+            setShowAsignaturasModal(false);
+            setProfesorSeleccionado(null);
           }}
         />
       )}
@@ -173,6 +329,7 @@ export const AdminProfesores = () => {
   );
 };
 
+// Modal de Profesor
 const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
   const [formData, setFormData] = useState(
     profesor || {
@@ -183,7 +340,7 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
       email: "",
       telefono: "",
       especialidad: "",
-      id_estado: estados[0]?.id_estado || "4",
+      id_estado: estados.find((e) => e.nombre === "Activo")?.id_estado || "4",
       crear_usuario: false,
       username: "",
       password: "",
@@ -226,6 +383,7 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
             name="rut"
             value={formData.rut}
             onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+            placeholder="12.345.678-9"
             required
           />
           <Input
@@ -236,6 +394,7 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
+            placeholder="profesor@colegio.cl"
             required
           />
         </div>
@@ -247,6 +406,7 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
           onChange={(e) =>
             setFormData({ ...formData, nombres: e.target.value })
           }
+          placeholder="María Elena"
           required
         />
 
@@ -279,6 +439,7 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
             onChange={(e) =>
               setFormData({ ...formData, telefono: e.target.value })
             }
+            placeholder="+56 9 1234 5678"
           />
           <Input
             label="Especialidad"
@@ -287,33 +448,56 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
             onChange={(e) =>
               setFormData({ ...formData, especialidad: e.target.value })
             }
-            placeholder="Ej: Matemáticas"
+            placeholder="Ej: Matemáticas, Lenguaje"
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Estado
+          </label>
+          <select
+            value={formData.id_estado}
+            onChange={(e) =>
+              setFormData({ ...formData, id_estado: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            required
+          >
+            {estados.map((estado) => (
+              <option key={estado.id_estado} value={estado.id_estado}>
+                {estado.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Crear usuario de acceso */}
         {!profesor && (
           <div className="border-t pt-4">
-            <label className="flex items-center gap-2 mb-3">
+            <label className="flex items-center gap-2 mb-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.crear_usuario}
                 onChange={(e) =>
                   setFormData({ ...formData, crear_usuario: e.target.checked })
                 }
-                className="w-4 h-4"
+                className="w-4 h-4 text-blue-600 rounded"
               />
               <span className="text-sm font-medium">
-                Crear usuario de acceso
+                Crear usuario de acceso al sistema
               </span>
             </label>
+
             {formData.crear_usuario && (
-              <div className="grid grid-cols-2 gap-4 ml-6">
+              <div className="grid grid-cols-2 gap-4 ml-6 p-4 bg-gray-50 rounded-lg">
                 <Input
                   label="Usuario"
                   value={formData.username}
                   onChange={(e) =>
                     setFormData({ ...formData, username: e.target.value })
                   }
+                  placeholder="usuario"
                   required={formData.crear_usuario}
                 />
                 <Input
@@ -323,6 +507,7 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
+                  placeholder="••••••••"
                   required={formData.crear_usuario}
                 />
               </div>
@@ -339,6 +524,85 @@ const ProfesorModal = ({ profesor, estados, onClose, onSave }) => {
           </Button>
         </div>
       </form>
+    </Modal>
+  );
+};
+
+// Modal Ver Asignaturas del Profesor
+const AsignaturasProfesorModal = ({ profesor, onClose }) => {
+  const [asignaturas, setAsignaturas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadAsignaturas();
+  }, []);
+
+  const loadAsignaturas = async () => {
+    try {
+      const response = await profesoresApi.getAsignaturas(profesor.id_profesor);
+      if (response.success) {
+        setAsignaturas(response.data.asignaturas || response.data);
+      }
+    } catch (error) {
+      toast.error("Error al cargar asignaturas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`Asignaturas de ${profesor.nombres}`}
+      size="lg"
+    >
+      {loading ? (
+        <div className="text-center py-8">Cargando...</div>
+      ) : (
+        <div className="space-y-4">
+          {asignaturas.length > 0 ? (
+            <div className="space-y-3">
+              {asignaturas.map((asig, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {asig.materia?.nombre ||
+                        asig.curso?.nombre ||
+                        "Sin nombre"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {asig.curso?.nivel?.nombre} • {asig.periodo?.nombre}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">
+                      {asig.horario || "Sin horario"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Sala: {asig.sala || "-"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>Este profesor no tiene asignaturas asignadas</p>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={onClose}>
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 };

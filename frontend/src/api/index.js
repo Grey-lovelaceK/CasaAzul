@@ -1,11 +1,12 @@
-// frontend/src/api/index.js
-
+export { default as api } from "./__config";
+export { apoderadosApi } from "./apoderados";
 export { asignaturasApi } from "./asignaturas";
-export { asistenciasApi } from "./asistencias";
 export { authApi } from "./auth";
-export { API_URL, apiClient } from "./config";
+export { catalogosApi } from "./catalogos";
+export { cursosApi } from "./cursos";
 export { dashboardApi } from "./dashboard";
 export { estudiantesApi } from "./estudiantes";
 export { matriculasApi } from "./matriculas";
-export { notasApi } from "./notas";
+export { periodosApi } from "./periodos";
 export { profesoresApi } from "./profesores";
+export { usuariosApi } from "./usuarios";
